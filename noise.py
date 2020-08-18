@@ -1,9 +1,9 @@
 
-from . import **
+from . import *
+from .lib8tion import *
 
 
 # Noise functions provided by the library.
-
 def P(x):
     return p[x]
 
@@ -12,17 +12,17 @@ p = [
     151, 160, 137,  91,  90,  15, 131,  13, 201,  95,  96,  53, 194, 233,   7, 225,
     140,  36, 103,  30,  69, 142,   8,  99,  37, 240,  21,  10,  23, 190,   6, 148,
     247, 120, 234,  75,   0,  26, 197,  62,  94, 252, 219, 203, 117,  35,  11,  32,
-     57, 177,  33,  88, 237, 149,  56,  87, 174,  20, 125, 136, 171, 168,  68, 175,
-     74, 165,  71, 134, 139,  48,  27, 166,  77, 146, 158, 231,  83, 111, 229, 122,
-     60, 211, 133, 230, 220, 105,  92,  41,  55,  46, 245,  40, 244, 102, 143,  54,
-     65,  25,  63, 161,   1, 216,  80,  73, 209,  76, 132, 187, 208,  89,  18, 169,
+    57, 177,  33,  88, 237, 149,  56,  87, 174,  20, 125, 136, 171, 168,  68, 175,
+    74, 165,  71, 134, 139,  48,  27, 166,  77, 146, 158, 231,  83, 111, 229, 122,
+    60, 211, 133, 230, 220, 105,  92,  41,  55,  46, 245,  40, 244, 102, 143,  54,
+    65,  25,  63, 161,   1, 216,  80,  73, 209,  76, 132, 187, 208,  89,  18, 169,
     200, 196, 135, 130, 116, 188, 159,  86, 164, 100, 109, 198, 173, 186,   3,  64,
-     52, 217, 226, 250, 124, 123,   5, 202,  38, 147, 118, 126, 255,  82,  85, 212,
+    52, 217, 226, 250, 124, 123,   5, 202,  38, 147, 118, 126, 255,  82,  85, 212,
     207, 206,  59, 227,  47,  16,  58,  17, 182, 189,  28,  42, 223, 183, 170, 213,
     119, 248, 152,   2,  44, 154, 163,  70, 221, 153, 101, 155, 167,  43, 172,   9,
     129,  22,  39, 253,  19,  98, 108, 110,  79, 113, 224, 232, 178, 185, 112, 104,
     218, 246,  97, 228, 251,  34, 242, 193, 238, 210, 144,  12, 191, 179, 162, 241,
-     81,  51, 145, 235, 249,  14, 239, 107,  49, 192, 214,  31, 181, 199, 106, 157,
+    81,  51, 145, 235, 249,  14, 239, 107,  49, 192, 214,  31, 181, 199, 106, 157,
     184,  84, 204, 176, 115, 121,  50,  45, 127,   4, 150, 254, 138, 236, 205,  93,
     222, 114,  67,  29,  24,  72, 243, 141, 128, 195,  78,  66, 215,  61, 156, 180,
     151
@@ -52,15 +52,18 @@ def EASE16(x):
 
     return ease16InOutQuad(x)
 
+
 # #define FADE_12
 FADE_12 = 0
 FADE_16 = 1
+
 
 def FADE(*args, **kwargs):
     if FADE_12:
         return logfade12(*args, **kwargs)
 
     return scale16(*args, **kwargs)
+
 
 def LERP(a, b, u):
     if FADE_12:
@@ -122,6 +125,7 @@ def selectBasedOnHashBit(hash_, bitnumber, a, b):
 
     return b
 
+
 def grad8(hash_, x, y=None, z=None):
     if y is None:
         if hash_ & 8:
@@ -158,11 +162,12 @@ def grad8(hash_, x, y=None, z=None):
     if hash_ & 2:
         v = -v
 
-    return avg7(u,v)
+    return avg7(u, v)
 
 
 def logfade12(val):
-    return scale16(val,val) >> 4
+    return scale16(val, val) >> 4
+
 
 def lerp15by12(a, b, frac):
     # if(1) return (lerp(frac,a,b));
@@ -185,13 +190,13 @@ def lerp7by8(a, b, frac):
     # int8_t result = a + scaled;
     # return result;
 
-    if  b > a:
+    if b > a:
         delta = b - a
         scaled = scale8(delta, frac)
         result = a + scaled
     else:
         delta = a - b
-        scaled = scale8( delta, frac)
+        scaled = scale8(delta, frac)
         result = a - scaled
 
     return result
@@ -315,7 +320,7 @@ def inoise16(x, y=None, z=None):
         # return (uint32_t)(((int32_t)inoise16_raw(x,y)+(uint32_t)17308)*242)>>7;
         # return scale16by8(inoise16_raw(x,y)+17308,242)<<1;
     else:
-        ans = inoise16_raw(x, y ,z)
+        ans = inoise16_raw(x, y, z)
         ans += 19052
         pan = ans
         # pan = (ans * 220L) >> 7.  That's the same as:
@@ -429,25 +434,26 @@ def inoise8_raw(x, y=None, z=None):
     
         return ans
 
+
 def inoise8(x, y=None, z=None):
     if z is None:
         # return scale8(69+inoise8_raw(x,y),237)<<1;
         n = inoise8_raw(x, y)  # -64..+64
-        n += 64                         #   0..128
-        ans = qadd8(n, n)     #   0..255
+        n += 64  # 0..128
+        ans = qadd8(n, n)  # 0..255
         return ans
 
     elif y is None:
-        n = inoise8_raw(x)    # -64..+64
-        n += 64                      # 0..128
-        ans = qadd8(n, n)     # 0..255
+        n = inoise8_raw(x)  # -64..+64
+        n += 64  # 0..128
+        ans = qadd8(n, n)  # 0..255
         return ans
 
     else:
         # return scale8(76+(inoise8_raw(x,y,z)),215)<<1;
-        n = inoise8_raw( x, y, z)  # -64..+64
-        n += 64                            #   0..128
-        ans = qadd8(n, n)        #   0..255
+        n = inoise8_raw(x, y, z)  # -64..+64
+        n += 64  # 0..128
+        ans = qadd8(n, n)  # 0..255
         return ans
 
 
@@ -465,27 +471,26 @@ class q44(object):
 # //     return (v *mulby44.i)  + ((v * mulby44.f) >> 4);
 # // }
 
-def fill_raw_noise8(pData, num_points, octaves, x, scale, time):
+def fill_raw_noise8(pData, num_points, octaves, x, scale, time_):
     _xx = x
     scx = scale
     for o in range(octaves):
         xx = _xx
         for i in range(num_points):
-            pData[i] = qadd8(pData[i], inoise8(xx, time) >> o)
-            xx +=scx
-
+            pData[i] = qadd8(pData[i], inoise8(xx, time_) >> o)
+            xx += scx
 
     _xx <<= 1
     scx <<= 1
 
 
-def fill_raw_noise16into8(pData, num_points, octaves, x, scale, time):
+def fill_raw_noise16into8(pData, num_points, octaves, x, scale, time_):
     _xx = x
     scx = scale
     for o in range(octaves):
         xx = _xx
         for i in range(num_points):
-            accum = inoise16(xx, time) >> o
+            accum = inoise16(xx, time_) >> o
             accum += pData[i] << 8
             if accum > 65535:
                 accum = 65535
@@ -498,7 +503,43 @@ def fill_raw_noise16into8(pData, num_points, octaves, x, scale, time):
     scx <<= 1
 
 
-def fill_raw_2dnoise8(pData, width, height, octaves, freq44, amplitude, skip, x, scalex, y, scaley, time):
+def fill_raw_2dnoise8(
+    pData,
+    width,
+    height,
+    octaves,
+    freq44=None,
+    amplitude=None,
+    skip=None,
+    x=None,
+    scalex=None,
+    y=None,
+    scaley=None,
+    time_=None
+):
+
+    if (
+        y is None and
+        scaley is None and
+        time_ is None and
+        freq44 is not None and
+        amplitude is not None and
+        skip is not None and
+        x is not None and
+        scalex is not None
+    ):
+        x, scaley = freq44, x
+        scalex, time_ = amplitude, scalex
+        y = skip,
+
+        freq44 = None
+        amplitude = None
+        skip = None
+
+    if freq44 is None and amplitude is None and skip is None:
+        fill_raw_2dnoise8(pData, width, height, octaves, q44(2, 0), 128, 1, x, scalex, y, scaley, time_)
+        return
+
     if octaves > 1:
         fill_raw_2dnoise8(
             pData,
@@ -512,32 +553,30 @@ def fill_raw_2dnoise8(pData, width, height, octaves, freq44, amplitude, skip, x,
             freq44 * scalex,
             y * freq44,
             freq44 * scaley,
-            time
+            time_
         )
     else:
         # amplitude is always 255 on the lowest level
         amplitude = 255
 
-
     scalex *= skip
     scaley *= skip
 
     invamp = fract8(255 - amplitude)
-    xx = x
 
     for i in range(height):
         pRow = pData + (i * width)
         xx = x
         for j in range(width):
-            noise_base = inoise8(xx, y, time)
+            noise_base = inoise8(xx, y, time_)
             if 0x80 & noise_base:
                 noise_base -= 127
             else:
                 noise_base = 127 - noise_base
 
-            noise_base = scale8(noise_base << 1,amplitude)
+            noise_base = scale8(noise_base << 1, amplitude)
             if skip == 1:
-                pRow[j] = scale8(pRow[j],invamp) + noise_base
+                pRow[j] = scale8(pRow[j], invamp) + noise_base
             else:
                 for ii in range(i + skip):
                     if ii >= height:
@@ -547,16 +586,13 @@ def fill_raw_2dnoise8(pData, width, height, octaves, freq44, amplitude, skip, x,
                     for jj in range(j + skip):
                         if jj >= width:
                             break
-                        pRow[jj] = scale8(pRow[jj],invamp) + noise_base
+                        pRow[jj] = scale8(pRow[jj], invamp) + noise_base
 
             xx += scalex
         y += scaley
 
-def fill_raw_2dnoise8(pData, width, height, octaves, x, scalex, y, scaley, time):
-    fill_raw_2dnoise8(pData, width, height, octaves, q44(2,0), 128, 1, x, scalex, y, scaley, time)
 
-
-def fill_raw_2dnoise16(pData, width, height, octaves, freq88, amplitude, skip, x, scalex, y, scaley, time):
+def fill_raw_2dnoise16(pData, width, height, octaves, freq88, amplitude, skip, x, scalex, y, scaley, time_):
     if octaves > 1:
         fill_raw_2dnoise16(
             pData,
@@ -570,7 +606,7 @@ def fill_raw_2dnoise16(pData, width, height, octaves, freq88, amplitude, skip, x
             scalex * freq88,
             y * freq88,
             scaley * freq88,
-            time
+            time_
         )
     else:
         # amplitude is always 255 on the lowest level
@@ -583,14 +619,14 @@ def fill_raw_2dnoise16(pData, width, height, octaves, freq88, amplitude, skip, x
         pRow = pData + (i * width)
         xx = x
         for j in range(0, width, skip):
-            noise_base = inoise16(xx, y, time)
+            noise_base = inoise16(xx, y, time_)
             if 0x8000 & noise_base:
                 noise_base -= 32767
             else:
                 noise_base = 32767 - noise_base
 
             noise_base = scale16(noise_base << 1, amplitude)
-            if skip==1:
+            if skip == 1:
                 pRow[j] = scale16(pRow[j], invamp) + noise_base
             else:
                 for ii in range(i + skip):
@@ -609,11 +645,46 @@ def fill_raw_2dnoise16(pData, width, height, octaves, freq88, amplitude, skip, x
         y += scaley
 
 
-
 nmin = 11111110
 nmax = 0
 
-def fill_raw_2dnoise16into8(pData, width, height, octaves, freq44, amplitude, skip, x, scalex, y, scaley, time_):
+
+def fill_raw_2dnoise16into8(
+        pData,
+        width,
+        height,
+        octaves,
+        freq44=None,
+        amplitude=None,
+        skip=None,
+        x=None,
+        scalex=None,
+        y=None,
+        scaley=None,
+        time_=None
+):
+    if (
+        y is None and
+        scaley is None and
+        time_ is None and
+        freq44 is not None and
+        amplitude is not None and
+        skip is not None and
+        x is not None and
+        scalex is not None
+    ):
+        x, scaley = freq44, x
+        scalex, time_ = amplitude, scalex
+        y = skip,
+
+        freq44 = None
+        amplitude = None
+        skip = None
+
+    if freq44 is None and amplitude is None and skip is None:
+        fill_raw_2dnoise16into8(pData, width, height, octaves, q44(2, 0), 128, 1, x, scalex, y, scaley, time_)
+        return
+
     if octaves > 1:
         fill_raw_2dnoise16into8(
             pData,
@@ -633,7 +704,6 @@ def fill_raw_2dnoise16into8(pData, width, height, octaves, freq44, amplitude, sk
         # amplitude is always 255 on the lowest level
         amplitude = 255
 
-
     scalex *= skip
     scaley *= skip
 
@@ -645,9 +715,9 @@ def fill_raw_2dnoise16into8(pData, width, height, octaves, freq44, amplitude, sk
         xx = x
         for j in range(0, width, skip):
             xx += scalex
-            noise_base = inoise16(xx, y, time)
+            noise_base = inoise16(xx, y, time_)
             noise_base = noise_base - 32767 if 0x8000 & noise_base else 32767 - noise_base
-            noise_base = scale8(noise_base >> 7,amplitude)
+            noise_base = scale8(noise_base >> 7, amplitude)
             if skip == 1:
                 pRow[j] = qadd8(scale8(pRow[j], invamp), noise_base)
             else:
@@ -655,10 +725,6 @@ def fill_raw_2dnoise16into8(pData, width, height, octaves, freq44, amplitude, sk
                     pRow = pData[ii * width:]
                     for jj in range(j, j + skip if j + skip <= width else width):
                         pRow[jj] = scale8(pRow[jj], invamp) + noise_base
-
-
-def fill_raw_2dnoise16into8(pData, width, height, octaves, x, scalex, y, scaley, time_):
-  fill_raw_2dnoise16into8(pData, width, height, octaves, q44(2,0), 171, 1, x, scalex, y, scaley, time_)
 
 
 def fill_noise8(
@@ -676,7 +742,7 @@ def fill_noise8(
     H = [0] * num_leds
 
     fill_raw_noise8(V, num_leds, octaves, x, scale, time_)
-    fill_raw_noise8(H, num_leds, hue_octaves,hue_x, hue_scale, time_)
+    fill_raw_noise8(H, num_leds, hue_octaves, hue_x, hue_scale, time_)
 
     for i in range(num_leds):
         leds[i] = CHSV(H[i], 255, V[i])
@@ -726,7 +792,6 @@ def fill_2dnoise8(
     V = [[0] * width] * height
     H = [[0] * width] * height
 
-
     fill_raw_2dnoise8(V, width, height, octaves, x, xscale, y, yscale, time_)
     fill_raw_2dnoise8(H, width, height, hue_octaves, hue_x, hue_xscale, hue_y, hue_yscale, hue_time)
 
@@ -746,6 +811,7 @@ def fill_2dnoise8(
                 leds[wb + pos] += led >> 1
             else:
                 leds[wb + pos] = led
+
 
 def fill_2dnoise16(
     leds,
@@ -774,7 +840,6 @@ def fill_2dnoise16(
     # fill_raw_2dnoise16into8((uint8_t*)V,width,height,octaves,x,xscale,y,yscale,time);
     # fill_raw_2dnoise8((uint8_t*)V,width,height,hue_octaves,x,xscale,y,yscale,time);
     fill_raw_2dnoise8(H, width, height, hue_octaves, hue_x, hue_xscale, hue_y, hue_yscale, hue_time)
-
 
     w1 = width - 1
     h1 = height - 1

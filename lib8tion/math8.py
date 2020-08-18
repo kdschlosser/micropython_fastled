@@ -20,7 +20,7 @@ from .scale8 import *
 # @returns the sum of i & j, capped at 0xFF
 def qadd8(i, j):
     t = i + j
-    if  t > 255:
+    if t > 255:
         t = 255
 
     return t
@@ -194,12 +194,12 @@ def sqrt16(x):
 
     return low - 1
 
+
 # blend a variable proproportion(0-255) of one byte to another
 # @param a - the starting byte value
 # @param b - the byte value to blend toward
 # @param amountOfB - the proportion (0-255) of b to blend
 # @returns a byte value between a and b, inclusive
-
 def blend8(a, b, amountOfB):
     if FASTLED_BLEND_FIXED == 1:
         amountOfA = 255 - amountOfB

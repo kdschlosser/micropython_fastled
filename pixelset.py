@@ -1,6 +1,6 @@
 
-from . import **
-from .pixeltypes import *
+from . import *
+from .colorutils import *
 
 
 #  Represents a set of CRGB led objects.  Provides the [] array operator, and works like a normal array in that case.
@@ -382,4 +382,3 @@ class CRGBArray(CRGBSet):
         super(CRGBArray, self).__init__(*args, **kwargs)
 
         self.rawleds = [pixel for pixel in self.leds]
-

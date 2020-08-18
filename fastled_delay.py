@@ -1,12 +1,12 @@
 
-from . import **
+from . import *
 import utime
 # @file fastled_delay.h
 # Utility functions and classes for managing delaycycles
 
 
-# Class to ensure that a minimum amount of time has kicked since the last time run - and delay if not enough time has passed yet
-# this should make sure that chipsets that have
+# Class to ensure that a minimum amount of time has kicked since the last time run - and delay if not enough
+# time has passed yet this should make sure that chipsets that have
 
 class CMinWait(object):
 
@@ -33,20 +33,18 @@ class CMinWait(object):
 # Default is now just 'nop', with special case for AVR
 
 # ESP32 core has it's own definition of NOP, so undef it first
-#ifdef ESP32
-#undef NOP
-#undef NOP2
-#endif
+# ifdef ESP32
+# undef NOP
+# undef NOP2
+# endif
 
-#if defined(__AVR__)
+# if defined(__AVR__)
 #  define FL_NOP __asm__ __volatile__ ("cp r0,r0\n");
 #  define FL_NOP2 __asm__ __volatile__ ("rjmp .+0");
-#else
+# else
 #  define FL_NOP __asm__ __volatile__ ("nop\n");
 #  define FL_NOP2 __asm__ __volatile__ ("nop\n\t nop\n");
-#endif
-
-
+# endif
 
 # TODO: ARM version of _delaycycles_
 

@@ -1,10 +1,10 @@
 
-from . import **
-from .pixeltypes import *
+from . import *
 
 
 def FORCE_REFERENCE(_):
     pass
+
 
 # hsv2rgb_rainbow - convert a hue, saturation, and value to RGB
 #                   using a visually balanced rainbow (vs a straight
@@ -13,7 +13,6 @@ def FORCE_REFERENCE(_):
 #                   than a straight 'spectrum'.
 # 
 #                   NOTE: here hue is 0-255, not just 0-191
-
 def hsv2rgb_rainbow(hsv, rgb, numLeds=None):
     if numLeds is None:
         # Yellow has a higher inherent brightness than
@@ -80,7 +79,6 @@ def hsv2rgb_rainbow(hsv, rgb, numLeds=None):
                         g = K85 + twothirds
                         b = 0
                         FORCE_REFERENCE(b)
-
 
             else:
                 # 01X
@@ -276,7 +274,6 @@ def hsv2rgb_raw(hsv, rgb, numLeds=None):
             hsv2rgb_raw(hsv[i], rgb[i])
 
 
-
 HUE_MAX = 191
 
 
@@ -355,7 +352,7 @@ def rgb2hsv_approximate(rgb):
     # if all three channels are zero, we had a
     # shade of gray.
     if (r + g + b) == 0:
-    # we pick hue zero for no special reason
+        # we pick hue zero for no special reason
         return CHSV(0, 0, 255 - s)
 
     # scale all channels up to compensate for desaturation
@@ -580,13 +577,12 @@ def hsv2rgb_raw_C(hsv, rgb):
     #  # rampdown *= 4; # 0..252
 
     # compute color-amplitude-scaled-down versions of rampup and rampdown
-    rampup_amp_adj = (rampup   * color_amplitude) / (256 / 4)
+    rampup_amp_adj = (rampup * color_amplitude) / (256 / 4)
     rampdown_amp_adj = (rampdown * color_amplitude) / (256 / 4)
 
     # add brightness_floor offset to everything
     rampup_adj_with_floor = rampup_amp_adj + brightness_floor
     rampdown_adj_with_floor = rampdown_amp_adj + brightness_floor
-
 
     if section:
         if section == 1:
@@ -606,6 +602,7 @@ def hsv2rgb_raw_C(hsv, rgb):
         rgb.g = rampup_adj_with_floor
         rgb.b = brightness_floor
 
+
 # Sometimes the compiler will do clever things to reduce
 # code size that result in a net slowdown, if it thinks that
 # a variable is not used in a certain location.
@@ -618,9 +615,98 @@ K171 = 171
 K170 = 170
 K85 = 85
 
+
 def FIXFRAC8(N, D):
     return (N * 256) / D
 
 # This function is only an approximation, and it is not
 # nearly as fast as the normal HSV-to-RGB conversion.
 # See extended notes in the .h file.
+
+
+def rgb2rgbw(rgb, rgbw):
+    r = rgb.r
+    g = rgb.g
+    b = rgb.g
+
+    if r == 255 and g == 255 and b == 255:
+        rgbw.r = 0
+        rgbw.g = 0
+        rgbw.b = 0
+        rgbw.w = 255
+        return
+
+    elif r == 0 and g == 0 and b == 0:
+        rgbw.r = 0
+        rgbw.g = 0
+        rgbw.b = 0
+        rgbw.w = 0
+        return
+
+    hsv = rgb2hsv_approximate(rgb)
+
+    # this conversion is close I am sure
+    # that is can be done better then what
+    # I am doing. I am using an RGB input
+    # value and then visually matching what
+    # my LED's are showing to be as close
+    # to the same color as I can get.
+
+    # first problem is I am using my eyes and not a meter.
+    # second problem is (255, 255, 255, 0) and (0, 0, 0, 255)
+    # are not the same color white. This is why I am as
+    # close as I can get
+
+    # the trick to this whole thing is to convert RGB to HSV
+    # then think of the Saturation as how much white and
+    # the Value as how bright the white is. It is kind
+    # of a funky way to determine how to set the white led.
+
+    s = hsv.s
+    v = hsv.v
+    hsv.s = 81.0
+
+    hsv2rgb_rainbow(hsv, rgbw)
+
+    s = (1 - (s / 100.0)) * 100.0
+    s /= 100.0
+    v /= 100.0
+    rgbw.w = (255 * (s / 2)) * v
+
+
+def rgbw2rgb(rgbw, rgb):
+    r = rgbw.r
+    g = rgbw.g
+    b = rgbw.b
+    w = rgbw.w
+
+    if r == 0 and g == 0 and b == 0 and w == 255:
+        rgb.r = 255
+        rgb.g = 255
+        rgb.b = 255
+        return
+
+    elif r == 0 and g == 0 and b == 0 and w == 0:
+        rgb.r = 0
+        rgb.g = 0
+        rgb.b = 0
+        return
+
+    hsv = rgb2hsv_approximate(rgbw)
+
+    try:
+        w += (w / (1 - (hsv.v / 100.0))) / 2
+    except ZeroDivisionError:
+        pass
+
+    s = (1 - ((w / 255.0) * 2)) * 100.0  # * 16.0) * 100.0
+    hsv.s = s
+
+    hsv2rgb_rainbow(hsv, rgb)
+
+    if rgb.r > 255:
+        rgb.r = 255
+    if rgb.g > 255:
+        rgb.g = 255
+    if rgb.b > 255:
+        rgb.b = 255

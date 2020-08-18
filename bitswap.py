@@ -1,5 +1,5 @@
 
-from . import **
+from . import *
 
 
 # @file bitswap.h
@@ -197,20 +197,19 @@ def swapbits8(in_, out):
 #  Slow version of the 8 byte by 8 bit rotation
 def slowswap(A, B):
     for row in range(7):
-      
         x = A[row]
 
         bit = 1 << row
-        p = B
+        p_ = B
         
         mask = 1 << 7
         index = 0
         while mask:
            
             if x & mask:
-                p[index] |= bit
+                p_[index] |= bit
             else:
-                p[index] &= ~bit
+                p_[index] &= ~bit
         
             index += 1
             mask >>= 1
@@ -384,4 +383,3 @@ def set_bit(value, bit_num, state):
         return value | (1 << bit_num)
 
     return value & ~(1 << bit_num)
-

@@ -2,7 +2,7 @@
 # @file controller.h
 # base definitions used by led controllers for writing out led data
 
-from . import **
+from . import *
 from .led_sysdefs import *
 from .pixeltypes import *
 from .color import *
@@ -10,6 +10,7 @@ from .lib8tion import *
 
 
 from . import NO_DITHERING, FASTLED_SCALE8_FIXED, NO_CORRECTION
+
 
 def RO(RGB_ORDER, X):
     return RGB_BYTE(RGB_ORDER, X)
@@ -30,13 +31,15 @@ def RGB_BYTE1(RO):
 def RGB_BYTE2(RO):
     return RO & 0x3
 
-# operator byte *(struct CRGB[] arr) { return (byte*)arr; }
 
+# operator byte *(struct CRGB[] arr) { return (byte*)arr; }
 DISABLE_DITHER = 0x00
 BINARY_DITHER = 0x01
 
+
 class EDitherMode(int):
     pass
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # /
 # 
@@ -45,10 +48,10 @@ class EDitherMode(int):
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # /
 
 # Base definition for an LED controller.  Pretty much the methods that every LED controller object will make available.
-# Note that the showARGB method is not impelemented for all controllers yet.   Note also the methods for eventual checking
-# of background writing of data (I'm looking at you, teensy 3.0 DMA controller!).  If you want to pass LED controllers around
-# to methods, make them references to this type, keeps your code saner.  However, most people won't be seeing/using these objects
-# directly at all
+# Note that the showARGB method is not impelemented for all controllers yet.   Note also the methods for eventual
+# checking of background writing of data (I'm looking at you, teensy 3.0 DMA controller!).  If you want to pass LED
+# controllers around to methods, make them references to this type, keeps your code saner.  However, most people
+# won't be seeing/using these objects directly at all
 class CLEDController(object):
     m_pHead = None
     m_pTail = None
@@ -76,7 +79,7 @@ class CLEDController(object):
 
     # clear out/zero out the given number of leds.
     def clearLeds(self, nLeds):
-        self.showColor(CRGB.Black, nLeds, CRGB.Black)
+        self.showColor(Black, nLeds, Black)
 
     # show function w/integer brightness, will scale for color correction and temperature
     def show(self, data, nLeds, brightness):

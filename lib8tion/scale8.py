@@ -1,4 +1,5 @@
 
+from . import *
 # @ingroup lib8tion
 
 # @defgroup Scaling Scaling functions
@@ -113,6 +114,22 @@ def nscale8x3(r, g, b, scale):
     return r, g, b
 
 
+def nscale8x4(r, g, b, w, scale):
+    if FASTLED_SCALE8_FIXED == 1:
+        scale_fixed = scale + 1
+        r = (r * scale_fixed) >> 8
+        g = (g * scale_fixed) >> 8
+        b = (b * scale_fixed) >> 8
+        w = (w * scale_fixed) >> 8
+    else:
+        r = (r * scale) >> 8
+        g = (g * scale) >> 8
+        b = (b * scale) >> 8
+        w = (w * scale) >> 8
+
+    return r, g, b, w
+
+
 # scale three one byte values by a fourth one, which is treated as
 #         the numerator of a fraction whose demominator is 256
 #         In other words, it computes r,g,b * (scale / 256), ensuring
@@ -120,7 +137,7 @@ def nscale8x3(r, g, b, scale):
 # argument.
 # 
 #         THIS FUNCTION ALWAYS MODIFIES ITS ARGUMENTS IN PLACE
-def nscale8x3_video(r, g, b, scale):
+def nscale8x3_video(r, g, b, scale=None):
     nonzeroscale = int(scale != 0)
     if r != 0:
         r = ((r * scale) >> 8) + nonzeroscale
@@ -130,6 +147,20 @@ def nscale8x3_video(r, g, b, scale):
         b = ((b * scale) >> 8) + nonzeroscale
 
     return r, g, b
+
+
+def nscale8x4_video(r, g, b, w, scale):
+    nonzeroscale = int(scale != 0)
+    if r != 0:
+        r = ((r * scale) >> 8) + nonzeroscale
+    if g != 0:
+        g = ((g * scale) >> 8) + nonzeroscale
+    if b != 0:
+        b = ((b * scale) >> 8) + nonzeroscale
+    if w != 0:
+        w = ((w * scale) >> 8) + nonzeroscale
+
+    return r, g, b, w
 
 
 #  scale two one byte values by a third one, which is treated as

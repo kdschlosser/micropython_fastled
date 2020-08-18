@@ -116,6 +116,22 @@ HUE_PINK = 224
 class CRGB(object):
 
     @property
+    def white(self):
+        return self._white
+
+    @white.setter
+    def white(self, value):
+        self._white = value
+
+    @property
+    def w(self):
+        return self._white
+
+    @w.setter
+    def w(self, value):
+        self._white = value
+
+    @property
     def red(self):
         return self._red
 
@@ -165,34 +181,83 @@ class CRGB(object):
 
     @property
     def raw(self):
-        return [self._red, self._green, self._blue]
+        if self._white is None:
+            return [self._red, self._green, self._blue]
+        else:
+            return [self._red, self._green, self._blue, self._white]
+
+    def get_data_stream(self, rgb_order):
+        rgb_order = str(rgb_order / 10000).split('.')[-1]
+
+        while rgb_order.count('0') > 1:
+            rgb_order = rgb_order[1:]
+
+        rgb_order = list(int(item) for item in list(rgb_order))
+
+        if 3 in rgb_order and self._white is None:
+            rgbw = CRGB()
+            rgb2rgbw(self, rgbw)
+            values = [rgbw.r, rgbw.b, rgbw.g, rgbw.w]
+        else:
+            values = [self._red, self._green, self._blue, self._white]
+
+        bytes_ = []
+        for index in rgb_order:
+            bytes_.append(values[index])
+
+        bit_array = []
+        for byte in bytes_:
+            bits = []
+            for i in range(7, -1, -1):
+                bits += [int(get_bit(byte, i))]
+
+            bit_array += [bits[:]]
+
+        return bit_array
 
     def __getitem__(self, index):
         return self.raw[index]
 
-    def __init__(self, iR=None, iG=None, iB=None, colorcode=None, rhs=None):
+    def __init__(self, iR=None, iG=None, iB=None, iW=None, colorcode=None, rhs=None):
         if isinstance(iR, CRGB):
-            self._red, self._green, self._blue = iR.raw
+            raw = iR.raw
+            if len(raw) == 4:
+                self._red, self._green, self._blue, self._white = raw
+            else:
+                self._white = None
+                self._red, self._green, self._blue = raw
 
         if isinstance(iR, CHSV):
             self._red = 0
             self._green = 0
             self._blue = 0
+            self._white = None
             hsv2rgb_rainbow(iR, self)
 
         elif isinstance(rhs, CRGB):
-            self._red, self._green, self._blue = rhs.raw
+            raw = iR.raw
+            if len(raw) == 4:
+                self._red, self._green, self._blue, self._white = raw
+            else:
+                self._white = None
+                self._red, self._green, self._blue = raw
 
         elif isinstance(rhs, CHSV):
             self._red = 0
             self._green = 0
             self._blue = 0
+            self._white = None
             hsv2rgb_rainbow(rhs, self)
 
         elif isinstance(colorcode, int):
             self._red = (colorcode >> 16) & 0xFF
             self._green = (colorcode >> 8) & 0xFF
             self._blue = (colorcode >> 0) & 0xFF
+
+            if colorcode > 16777215:
+                self._white = (colorcode >> 24) & 0xFF
+            else:
+                self._white = None
 
         else:
             if iR is None:
@@ -204,16 +269,25 @@ class CRGB(object):
 
             self._red = iR
             self._green = iG
-            self._blue - iB
+            self._blue = iB
+            self._white = iW
 
-    def setRGB(self, nR, nG, nB):
+    def setRGB(self, nR, nG, nB, nW=None):
         self._red = nR
         self._green = nG
         self._blue = nB
+        self._white = nW
         return self
 
     def setHSV(self, hue, sat, val):
-        hsv2rgb_rainbow(CHSV(hue, sat, val), self)
+        if self._white is not None:
+            rgb = CRGB()
+            hsv2rgb_rainbow(CHSV(hue, sat, val), rgb)
+            rgb2rgbw(rgb, self)
+
+        else:
+            hsv2rgb_rainbow(CHSV(hue, sat, val), self)
+
         return self
 
     def setHue(self, hue):
@@ -221,28 +295,89 @@ class CRGB(object):
         return self
 
     def setColorCode(self, colorcode):
+        if colorcode > 16777215:
+            self._white = (colorcode >> 24) & 0xFF
+        else:
+            self._white = None
+
         self._red = (colorcode >> 16) & 0xFF
         self._green = (colorcode >> 8) & 0xFF
         self._blue = (colorcode >> 0) & 0xFF
         return self
 
     def __iadd__(self, rhs):
-        self._red = qadd8(self._red, rhs.r)
-        self._green = qadd8(self._green, rhs.g)
-        self._blue = qadd8(self._blue, rhs.b)
+        if self._white is None and rhs.w is None:
+            self._red = qadd8(self._red, rhs.r)
+            self._green = qadd8(self._green, rhs.g)
+            self._blue = qadd8(self._blue, rhs.b)
+
+        elif self._white is not None and rhs.w is not None:
+            self._white = qadd8(self._white, rhs.w)
+            self._red = qadd8(self._red, rhs.r)
+            self._green = qadd8(self._green, rhs.g)
+            self._blue = qadd8(self._blue, rhs.b)
+        elif rhs.w is not None:
+            rgb = CRGB()
+            rgbw2rgb(rhs, rgb)
+
+            rgb.r = qadd8(self._red, rgb.r)
+            rgb.g = qadd8(self._green, rgb.g)
+            rgb.b = qadd8(self._blue, rgb.b)
+
+            rgb2rgbw(rgb, self)
+        else:
+            rgb = CRGB()
+            rgbw2rgb(self, rgb)
+
+            rgb.r = qadd8(rgb.r, rhs.r)
+            rgb.g = qadd8(rgb.g, rhs.g)
+            rgb.b = qadd8(rgb.b, rhs.b)
+
+            rgb2rgbw(rgb, self)
+
         return self
 
     def addToRGB(self, d):
         self._red = qadd8(self._red, d)
         self._green = qadd8(self._green, d)
         self._blue = qadd8(self._blue, d)
+
+        if self._white is not None:
+            self._white = qadd8(self._white, d)
+
         return self
 
     def __isub__(self, rhs):
         if isinstance(rhs, CRGB):
-            self._red = qsub8(self._red, rhs.r)
-            self._green = qsub8(self._green, rhs.g)
-            self._blue = qsub8(self._blue, rhs.b)
+            if self._white is None and rhs.w is None:
+                self._red = qsub8(self._red, rhs.r)
+                self._green = qsub8(self._green, rhs.g)
+                self._blue = qsub8(self._blue, rhs.b)
+
+            elif self._white is not None and rhs.w is not None:
+                self._white = qsub8(self._white, rhs.w)
+                self._red = qsub8(self._red, rhs.r)
+                self._green = qsub8(self._green, rhs.g)
+                self._blue = qsub8(self._blue, rhs.b)
+            elif rhs.w is not None:
+                rgb = CRGB()
+                rgbw2rgb(rhs, rgb)
+
+                rgb.r = qsub8(self._red, rgb.r)
+                rgb.g = qsub8(self._green, rgb.g)
+                rgb.b = qsub8(self._blue, rgb.b)
+
+                rgb2rgbw(rgb, self)
+            else:
+                rgb = CRGB()
+                rgbw2rgb(self, rgb)
+
+                rgb.r = qsub8(rgb.r, rhs.r)
+                rgb.g = qsub8(rgb.g, rhs.g)
+                rgb.b = qsub8(rgb.b, rhs.b)
+
+                rgb2rgbw(rgb, self)
+
         else:
             self.subtractFromRGB(rhs)
         return self
@@ -251,51 +386,67 @@ class CRGB(object):
         self._red = qsub8(self._red, d)
         self._green = qsub8(self._green, d)
         self._blue = qsub8(self._blue, d)
+
+        if self._white is not None:
+            self._white = qsub8(self._white, d)
+
         return self
 
     def __idiv__(self, d):
         self._red /= d
         self._green /= d
         self._blue /= d
+
+        if self._white is not None:
+            self._white /= d
+
         return self
 
     def __irshift__(self, d):
         self._red >>= d
         self._green >>= d
         self._blue >>= d
+
+        if self._white is not None:
+            self._white >>= d
+
         return self
 
     def __imul__(self, d):
         self._red = qmul8(self._red, d)
         self._green = qmul8(self._green, d)
         self._blue = qmul8(self._blue, d)
+
+        if self._white is not None:
+            self._white = qmul8(self._white, d)
+
         return self
 
     def nscale8_video(self, scaledown):
-        self._red, self._green, self._blue = nscale8x3_video(
-            self._red,
-            self._green,
-            self._blue,
-            scaledown
-        )
+        if self._white is None:
+            self._red, self._green, self._blue = nscale8x3_video(
+                self._red,
+                self._green,
+                self._blue,
+                scaledown
+            )
+        else:
+            self._red, self._green, self._blue, self._white = nscale8x4_video(
+                self._red,
+                self._green,
+                self._blue,
+                self._white,
+                scaledown
+            )
+
         return self
 
     def __imod__(self, scaledown):
-        self._red, self._green, self._blue = nscale8x3_video(
-            self._red,
-            self._green,
-            self._blue,
-            scaledown
-        )
+        self.nscale8_video(scaledown)
         return self
 
     def fadeLightBy(self, fadefactor):
-        self._red, self._green, self._blue = nscale8x3_video(
-            self._red,
-            self._green,
-            self._blue,
-            255 - fadefactor
-        )
+        self.nscale8_video(255 - fadefactor)
         return self
 
     def scale8(self, scaledown):
@@ -304,29 +455,53 @@ class CRGB(object):
             out.r = scale8(self._red, scaledown.r)
             out.g = scale8(self._green, scaledown.g)
             out.b = scale8(self._blue, scaledown.b)
+            out.w = scale8(self._white, scaledown.w)
+
             return out
         else:
-            self._red, self._green, self._blue = nscale8x3(
-                self._red,
-                self._green,
-                self._blue,
-                scaledown
-            )
+            if self._white is None:
+                self._red, self._green, self._blue = nscale8x3(
+                    self._red,
+                    self._green,
+                    self._blue,
+                    scaledown
+                )
+            else:
+                self._red, self._green, self._blue, self._white = nscale8x4(
+                    self._red,
+                    self._green,
+                    self._blue,
+                    self._white,
+                    scaledown
+                )
+
             return self
 
     def nscale8(self, scaledown):
         self._red = scale8(self._red, scaledown.r)
         self._green = scale8(self._green, scaledown.g)
         self._blue = scale8(self._blue, scaledown.b)
+
+        self._white = scale8(self._white, scaledown.w)
         return self
 
     def fadeToBlackBy(self, fadefactor):
-        self._red, self._green, self._blue = nscale8x3(
-            self._red,
-            self._green,
-            self._blue,
-            255 - fadefactor
-        )
+        if self._white is None:
+            self._red, self._green, self._blue = nscale8x3(
+                self._red,
+                self._green,
+                self._blue,
+                255 - fadefactor
+            )
+        else:
+            self._red, self._green, self._blue, self._white = nscale8x4(
+                self._red,
+                self._green,
+                self._blue,
+                self._white,
+                255 - fadefactor
+            )
+
         return self
 
     def __ior__(self, rhs):
@@ -337,6 +512,13 @@ class CRGB(object):
                 self._green = rhs.g
             if rhs.b > self._blue:
                 self._blue = rhs.b
+
+            if self._white is not None and rhs.w is not None:
+                if rhs.w > self._white:
+                    self._white = rhs.w
+            elif rhs.w is not None:
+                self._white = rhs.w
+
         else:
             if rhs > self._red:
                 self._red = rhs
@@ -344,6 +526,8 @@ class CRGB(object):
                 self._green = rhs
             if rhs > self._blue:
                 self._blue = rhs
+            if self._white is not None and rhs > self._white:
+                self._white = rhs
 
         return self
 
@@ -355,6 +539,13 @@ class CRGB(object):
                 self._green = rhs.g
             if rhs.b < self._blue:
                 self._blue = rhs.b
+
+            if self._white is not None and rhs.w is not None:
+                if rhs.w < self.white:
+                    self._white = rhs.w
+            elif rhs.w is not None:
+                self._white = rhs.w
+
         else:
             if rhs < self._red:
                 self._red = rhs
@@ -362,17 +553,22 @@ class CRGB(object):
                 self._green = rhs
             if rhs < self._blue:
                 self._blue = rhs
+            if self._white is not None and rhs < self._white:
+                self._white = rhs
 
         return self
 
     def __bool__(self):
-        return self._red != 0 or self._green != 0 or self._blue != 0
+        return self._red != 0 or self._green != 0 or self._blue != 0 or int(self._white) != 0
 
     def __neg__(self):
         retval = CRGB()
         retval.r = 255 - self._red
         retval.g = 255 - self._green
         retval.b = 255 - self._blue
+        if self._white is not None:
+            retval.w = 255 - self._white
+
         return retval
 
     #
@@ -389,12 +585,20 @@ class CRGB(object):
     def getLuma(self):
         # Y' = 0.2126 R' + 0.7152 G' + 0.0722 B'
         #      54            183       18 (!)
+
+        if self._white is None:
+            rgb = self
+        else:
+            rgb = CRGB()
+            rgbw2rgb(self, rgb)
+
         luma = (
-                scale8_LEAVING_R1_DIRTY(self._red, 54) +
-                scale8_LEAVING_R1_DIRTY(self._green, 183) +
-                scale8_LEAVING_R1_DIRTY(self._blue, 18)
+            scale8_LEAVING_R1_DIRTY(rgb.r, 54) +
+            scale8_LEAVING_R1_DIRTY(rgb.g, 183) +
+            scale8_LEAVING_R1_DIRTY(rgb.b, 18)
         )
         cleanup_R1()
+
         return luma
 
     def getAverageLight(self):
@@ -403,46 +607,82 @@ class CRGB(object):
         else:
             eightyfive = 86
 
+        if self._white is None:
+            rgb = self
+        else:
+            rgb = CRGB()
+            rgbw2rgb(self, rgb)
+
         avg = (
-                scale8_LEAVING_R1_DIRTY(self._red, eightyfive) +
-                scale8_LEAVING_R1_DIRTY(self._green, eightyfive) +
-                scale8_LEAVING_R1_DIRTY(self._blue, eightyfive)
+            scale8_LEAVING_R1_DIRTY(rgb.r, eightyfive) +
+            scale8_LEAVING_R1_DIRTY(rgb.g, eightyfive) +
+            scale8_LEAVING_R1_DIRTY(rgb.b, eightyfive)
         )
         cleanup_R1()
         return avg
 
     def maximizeBrightness(self, limit=255):
-        max_ = self._red
-        if self._green > max_:
-            max_ = self._green
-        if self._blue > max_:
-            max_ = self._blue
+        if self.white is None:
+            rgb = self
+
+        else:
+            rgb = CRGB()
+            rgbw2rgb(self, rgb)
+
+        max_ = rgb.r
+        if rgb.g > max_:
+            max_ = rgb.g
+        if rgb.b > max_:
+            max_ = rgb.b
 
         # stop div/0 when color is black
         if max_ > 0:
             factor = (limit * 256) / max_
-            self._red = (self._red * factor) / 256
-            self._green = (self._green * factor) / 256
-            self._blue = (self._blue * factor) / 256
+            rgb.r = (rgb.r * factor) / 256
+            rgb.g = (rgb.g * factor) / 256
+            rgb.b = (rgb.b * factor) / 256
+
+        if self._white is None:
+            self._red = rgb.r
+            self._green = rgb.g
+            self._blue = rgb.b
+        else:
+            rgb2rgbw(rgb, self)
 
     def lerp8(self, other, frac):
-        ret = CRGB()
-        ret.r = lerp8by8(self._red, other.r, frac)
-        ret.g = lerp8by8(self._green, other.g, frac)
-        ret.b = lerp8by8(self._blue, other.b, frac)
+        if self._white is None:
+            rgb = self
+        else:
+            rgb = CRGB()
+            rgbw2rgb(self, rgb)
 
-        return ret
+        rgb.r = lerp8by8(rgb.r << 8, other.r << 8, frac)
+        rgb.g = lerp8by8(rgb.g << 8, other.g << 8, frac)
+        rgb.b = lerp8by8(rgb.b << 8, other.b << 8, frac)
+
+        return rgb
 
     def lerp16(self, other, frac):
-        ret = CRGB()
-        ret.r = lerp16by16(self._red << 8, other.r << 8, frac) >> 8
-        ret.g = lerp16by16(self._green << 8, other.g << 8, frac) >> 8
-        ret.b = lerp16by16(self._blue << 8, other.b << 8, frac) >> 8
+        if self._white is None:
+            rgb = self
+        else:
+            rgb = CRGB()
+            rgbw2rgb(self, rgb)
 
-        return ret
+        rgb.r = lerp16by16(rgb.r << 8, other.r << 8, frac) >> 8
+        rgb.g = lerp16by16(rgb.g << 8, other.g << 8, frac) >> 8
+        rgb.b = lerp16by16(rgb.b << 8, other.b << 8, frac) >> 8
+
+        return rgb
 
     def getParity(self):
-        sum_ = self._red + self._green + self._blue
+        if self._white is None:
+            rgb = self
+        else:
+            rgb = CRGB()
+            rgbw2rgb(self, rgb)
+
+        sum_ = rgb.r + rgb.g + rgb.b
         return sum_ & 0x01
 
     def setParity(self, parity):
@@ -450,112 +690,229 @@ class CRGB(object):
 
         if parity == curparity:
             return
+        if self._white is None:
+            rgb = self
+        else:
+            rgb = CRGB()
+            rgbw2rgb(self, rgb)
 
         if parity:
             # going 'up'
-            if 255 > self._blue > 0:
-                if self._red == self._green == self._blue:
-                    self._red += 1
-                    self._green += 1
+            if 255 > rgb.b > 0:
+                if rgb.r == rgb.g == rgb.b:
+                    rgb.r += 1
+                    rgb.g += 1
 
-                self._blue += 1
-            elif 255 > self._red > 0:
-                self._red += 1
-            elif 255 > self._green > 0:
-                self._green += 1
+                rgb.b += 1
+            elif 255 > rgb.r > 0:
+                rgb.r += 1
+            elif 255 > rgb.g > 0:
+                rgb.g += 1
             else:
-                if self._red == self._green == self._blue:
-                    self._red ^= 0x01
-                    self._green ^= 0x01
+                if rgb.r == rgb.g == rgb.b:
+                    rgb.r ^= 0x01
+                    rgb.g ^= 0x01
 
-                self._blue ^= 0x01
+                rgb.b ^= 0x01
 
         else:
             # going 'down'
-            if self._blue > 1:
-                if self._red == self._green == self._blue:
-                    self._red -= 1
-                    self._green -= 1
+            if rgb.b > 1:
+                if rgb.r == rgb.g == rgb.b:
+                    rgb.r -= 1
+                    rgb.g -= 1
 
-                self._blue -= 1
-            elif self._green > 1:
-                self._green -= 1
-            elif self._red > 1:
-                self._red -= 1
+                rgb.b -= 1
+            elif rgb.g > 1:
+                rgb.g -= 1
+            elif rgb.r > 1:
+                rgb.r -= 1
             else:
-                if self._red == self._green == self._blue:
-                    self._red ^= 0x01
-                    self._green ^= 0x01
+                if rgb.r == rgb.g == rgb.b:
+                    rgb.r ^= 0x01
+                    rgb.g ^= 0x01
 
-                self._blue ^= 0x01
+                rgb.b ^= 0x01
+
+        if self._white is None:
+            self._red = rgb.r
+            self._green = rgb.g
+            self._blue = rgb.b
+        else:
+            rgb2rgbw(rgb, self)
 
     def __eq__(self, rhs):
-        return self._red == rhs.r and self._green == rhs.g and self._blue == rhs.b
+        return self._red == rhs.r and self._green == rhs.g and self._blue == rhs.b and self._white == rhs.w
 
     def __ne__(self, rhs):
         return not self.__eq__(rhs)
 
     def __lt__(self, rhs):
-        sl = self._red + self._green + self._blue
-        sr = rhs.r + rhs.g + rhs.b
+        sl = self._red + self._green + self._blue + int(self._white)
+        sr = rhs.r + rhs.g + rhs.b + int(rhs.w)
         return sl < sr
 
     def __gt__(self, rhs):
-        sl = self._red + self._green + self._blue
-        sr = rhs.r + rhs.g + rhs.b
+        sl = self._red + self._green + self._blue + int(self._white)
+        sr = rhs.r + rhs.g + rhs.b + int(rhs.w)
         return sl > sr
 
     def __le__(self, rhs):
-        sl = self._red + self._green + self._blue
-        sr = rhs.r + rhs.g + rhs.b
+        sl = self._red + self._green + self._blue + int(self._white)
+        sr = rhs.r + rhs.g + rhs.b + int(rhs.w)
         return sl <= sr
 
     def __ge__(self, rhs):
-        sl = self._red + self._green + self._blue
-        sr = rhs.r + rhs.g + rhs.b
+        sl = self._red + self._green + self._blue + int(self._white)
+        sr = rhs.r + rhs.g + rhs.b + int(rhs.w)
         return sl >= sr
 
     def __add__(self, p2):
-        return CRGB(
-            qadd8(self._red, p2.r),
-            qadd8(self._green, p2.g),
-            qadd8(self._blue, p2.b)
-        )
+        if self._white is None and p2.w is None:
+            return CRGB(
+                qadd8(self._red, p2.r),
+                qadd8(self._green, p2.g),
+                qadd8(self._blue, p2.b)
+            )
+        elif self._white is not None and p2.w is not None:
+            return CRGB(
+                qadd8(self._red, p2.r),
+                qadd8(self._green, p2.g),
+                qadd8(self._blue, p2.b),
+                qadd8(self._white, p2.w)
+            )
+        elif self._white is not None:
+            return CRGB(
+                qadd8(self._red, p2.r),
+                qadd8(self._green, p2.g),
+                qadd8(self._blue, p2.b),
+                self._white
+            )
+        else:
+            return CRGB(
+                qadd8(self._red, p2.r),
+                qadd8(self._green, p2.g),
+                qadd8(self._blue, p2.b),
+                p2.w
+            )
 
     def __sub__(self, p2):
-        return CRGB(
-            qsub8(self._red, p2.r),
-            qsub8(self._green, p2.g),
-            qsub8(self._blue, p2.b)
-        )
+        if self._white is None and p2.w is None:
+            return CRGB(
+                qsub8(self._red, p2.r),
+                qsub8(self._green, p2.g),
+                qsub8(self._blue, p2.b)
+            )
+        elif self._white is not None and p2.w is not None:
+            return CRGB(
+                qsub8(self._red, p2.r),
+                qsub8(self._green, p2.g),
+                qsub8(self._blue, p2.b),
+                qsub8(self._white, p2.w)
+            )
+        elif self._white is not None:
+            return CRGB(
+                qsub8(self._red, p2.r),
+                qsub8(self._green, p2.g),
+                qsub8(self._blue, p2.b),
+                self._white
+            )
+        else:
+            return CRGB(
+                qsub8(self._red, p2.r),
+                qsub8(self._green, p2.g),
+                qsub8(self._blue, p2.b),
+                p2.w
+            )
 
     def __mul__(self, d):
-        return CRGB(
-            qmul8(self._red, d),
-            qmul8(self._green, d),
-            qmul8(self._blue, d)
-        )
+        if self._white is None:
+            return CRGB(
+                qmul8(self._red, d),
+                qmul8(self._green, d),
+                qmul8(self._blue, d)
+            )
+        else:
+            return CRGB(
+                qmul8(self._red, d),
+                qmul8(self._green, d),
+                qmul8(self._blue, d),
+                qmul8(self._white, d)
+            )
 
     def __floordiv__(self, d):
-        return CRGB(
-            self._red // d,
-            self._green // d,
-            self._blue // d
-        )
+        if self._white is None:
+            return CRGB(
+                self._red // d,
+                self._green // d,
+                self._blue // d
+            )
+        else:
+            return CRGB(
+                self._red // d,
+                self._green // d,
+                self._blue // d,
+                self._white // d
+            )
 
     def __and__(self, p2):
-        return CRGB(
-            self._red if self._red < p2.r else p2.r,
-            self._green if self._green < p2.g else p2.g,
-            self._blue if self._blue < p2.b else p2.b
-        )
+        if self._white is None and p2.w is None:
+            return CRGB(
+                self._red if self._red < p2.r else p2.r,
+                self._green if self._green < p2.g else p2.g,
+                self._blue if self._blue < p2.b else p2.b
+            )
+        elif self._white is not None and p2.w is not None:
+            return CRGB(
+                self._red if self._red < p2.r else p2.r,
+                self._green if self._green < p2.g else p2.g,
+                self._blue if self._blue < p2.b else p2.b,
+                self._white if self._white < p2.w else p2.w
+            )
+        elif self._white is not None:
+            return CRGB(
+                self._red if self._red < p2.r else p2.r,
+                self._green if self._green < p2.g else p2.g,
+                self._blue if self._blue < p2.b else p2.b,
+                self._white
+            )
+        else:
+            return CRGB(
+                self._red if self._red < p2.r else p2.r,
+                self._green if self._green < p2.g else p2.g,
+                self._blue if self._blue < p2.b else p2.b,
+                p2.w
+            )
 
     def __or__(self, p2):
-        return CRGB(
-            self._red if self._red > p2.r else p2.r,
-            self._green if self._green > p2.g else p2.g,
-            self._blue if self._blue > p2.b else p2.b
-        )
+
+        if self._white is None and p2.w is None:
+            return CRGB(
+                self._red if self._red > p2.r else p2.r,
+                self._green if self._green > p2.g else p2.g,
+                self._blue if self._blue > p2.b else p2.b,
+            )
+        elif self._white is not None and p2.w is not None:
+            return CRGB(
+                self._red if self._red > p2.r else p2.r,
+                self._green if self._green > p2.g else p2.g,
+                self._blue if self._blue > p2.b else p2.b,
+                self._white if self._white > p2.w else p2.w
+            )
+        elif self._white is not None:
+            return CRGB(
+                self._red if self._red > p2.r else p2.r,
+                self._green if self._green > p2.g else p2.g,
+                self._blue if self._blue > p2.b else p2.b,
+                self._white
+            )
+        else:
+            return CRGB(
+                self._red if self._red > p2.r else p2.r,
+                self._green if self._green > p2.g else p2.g,
+                self._blue if self._blue > p2.b else p2.b,
+                p2.w
+            )
 
     def __mod__(self, d):
         retval = CRGB(self)
@@ -566,12 +923,42 @@ class CRGB(object):
 # RGB orderings, used when instantiating controllers to determine what
 # order the controller should send RGB data out in, RGB being the default
 # ordering.
+
 RGB = 12
+RGBW = 123
+RGWB = 132
+RWGB = 312
+WRGB = 3012
+
 RBG = 21
+RBGW = 213
+RBWG = 231
+RWBG = 321
+WRBG = 3021
+
 GRB = 102
+GRBW = 1023
+GRWB = 1032
+GWRB = 1302
+WGRB = 3102
+
 GBR = 120
+GBRW = 1203
+GBWR = 1230
+GWBR = 1320
+WGBR = 3120
+
 BRG = 201
+BRGW = 2013
+BRWG = 2031
+BWRG = 2301
+WBRG = 3201
+
 BGR = 210
+BGRW = 2103
+BGWR = 2130
+BWGR = 2310
+WBGR = 3210
 
 AliceBlue = 0xF0F8FF
 Amethyst = 0x9966CC

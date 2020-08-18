@@ -1,5 +1,5 @@
 
-from ..FastLED import *
+from .. import *
 from ..bitswap import get_bit, set_bit
 
 # 

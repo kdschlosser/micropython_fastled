@@ -1,5 +1,4 @@
 
-from . import **
 from .colorutils import *
 
 # Preset color schemes, such as they are.
@@ -12,97 +11,97 @@ from .colorutils import *
 
 CloudColors_p = TProgmemRGBPalette16(
     [
-        CRGB.Blue,
-        CRGB.DarkBlue,
-        CRGB.DarkBlue,
-        CRGB.DarkBlue,
+        Blue,
+        DarkBlue,
+        DarkBlue,
+        DarkBlue,
         
-        CRGB.DarkBlue,
-        CRGB.DarkBlue,
-        CRGB.DarkBlue,
-        CRGB.DarkBlue,
+        DarkBlue,
+        DarkBlue,
+        DarkBlue,
+        DarkBlue,
 
-        CRGB.Blue,
-        CRGB.DarkBlue,
-        CRGB.SkyBlue,
-        CRGB.SkyBlue,
+        Blue,
+        DarkBlue,
+        SkyBlue,
+        SkyBlue,
 
-        CRGB.LightBlue,
-        CRGB.White,
-        CRGB.LightBlue,
-        CRGB.SkyBlue
+        LightBlue,
+        White,
+        LightBlue,
+        SkyBlue
     ]
 )
 
 LavaColors_p = TProgmemRGBPalette16(
     [
-        CRGB.Black,
-        CRGB.Maroon,
-        CRGB.Black,
-        CRGB.Maroon,
+        Black,
+        Maroon,
+        Black,
+        Maroon,
 
-        CRGB.DarkRed,
-        CRGB.Maroon,
-        CRGB.DarkRed,
+        DarkRed,
+        Maroon,
+        DarkRed,
 
-        CRGB.DarkRed,
-        CRGB.DarkRed,
-        CRGB.Red,
-        CRGB.Orange,
+        DarkRed,
+        DarkRed,
+        Red,
+        Orange,
 
-        CRGB.White,
-        CRGB.Orange,
-        CRGB.Red,
-        CRGB.DarkRed
+        White,
+        Orange,
+        Red,
+        DarkRed
     ]
 )
 
 
 OceanColors_p = TProgmemRGBPalette16(
     [
-        CRGB.MidnightBlue,
-        CRGB.DarkBlue,
-        CRGB.MidnightBlue,
-        CRGB.Navy,
+        MidnightBlue,
+        DarkBlue,
+        MidnightBlue,
+        Navy,
 
-        CRGB.DarkBlue,
-        CRGB.MediumBlue,
-        CRGB.SeaGreen,
-        CRGB.Teal,
+        DarkBlue,
+        MediumBlue,
+        SeaGreen,
+        Teal,
 
-        CRGB.CadetBlue,
-        CRGB.Blue,
-        CRGB.DarkCyan,
-        CRGB.CornflowerBlue,
+        CadetBlue,
+        Blue,
+        DarkCyan,
+        CornflowerBlue,
 
-        CRGB.Aquamarine,
-        CRGB.SeaGreen,
-        CRGB.Aqua,
-        CRGB.LightSkyBlue
+        Aquamarine,
+        SeaGreen,
+        Aqua,
+        LightSkyBlue
     ]
 )
 
 ForestColors_p = TProgmemRGBPalette16(
     [
-        CRGB.DarkGreen,
-        CRGB.DarkGreen,
-        CRGB.DarkOliveGreen,
-        CRGB.DarkGreen,
+        DarkGreen,
+        DarkGreen,
+        DarkOliveGreen,
+        DarkGreen,
 
-        CRGB.Green,
-        CRGB.ForestGreen,
-        CRGB.OliveDrab,
-        CRGB.Green,
+        Green,
+        ForestGreen,
+        OliveDrab,
+        Green,
 
-        CRGB.SeaGreen,
-        CRGB.MediumAquamarine,
-        CRGB.LimeGreen,
-        CRGB.YellowGreen,
+        SeaGreen,
+        MediumAquamarine,
+        LimeGreen,
+        YellowGreen,
 
-        CRGB.LightGreen,
-        CRGB.LawnGreen,
-        CRGB.MediumAquamarine,
-        CRGB.ForestGreen
+        LightGreen,
+        LawnGreen,
+        MediumAquamarine,
+        ForestGreen
     ]
 )
 
@@ -171,8 +170,7 @@ def DEFINE_GRADIENT_PALETTE():
         96,    0,  255,    0,  # Green
         128,    0,  171,   85,  # Aqua
         160,    0,    0,  255,  # Blue
-        192,   85,    0,  171, # Purple
-        224,  171,    0,   85, # Pink
+        192,   85,    0,  171,  # Purple
+        224,  171,    0,   85,  # Pink
         255,  255,    0,    0  # and back to Red
     ]
-
